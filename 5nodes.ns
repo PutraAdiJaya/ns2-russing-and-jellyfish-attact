@@ -1,0 +1,203 @@
+#------------------------------------------------------- 
+# This ns script has been created by the nam editor.
+# If you edit it manually, the nam editor might not
+# be able to open it properly in the future.
+#
+# EDITING BY HAND IS AT YOUR OWN RISK!
+#------------------------------------------------------- 
+# Create a new simulator object.
+set ns [new Simulator]
+# Create a nam trace datafile.
+set namfile [open /home/ubuntu18/ns-allinone-2.35/5nodes.nam w]
+$ns namtrace-all $namfile
+
+# Create wired nodes.
+
+# ----- Setup wireless environment. ----
+set wireless_tracefile [open /home/ubuntu18/ns-allinone-2.35/5nodes.trace w]
+set topography [new Topography]
+$ns trace-all $wireless_tracefile
+$ns namtrace-all-wireless $namfile 714.583252 749.445374
+$topography load_flatgrid 714.583252 749.445374
+#
+# Create God
+#
+set god_ [create-god 10]
+#global node setting
+$ns node-config -adhocRouting DSR \
+                 -llType LL \
+                 -macType Mac/802_11 \
+                 -ifqType Queue/DropTail/PriQueue \
+                 -ifqLen 50 \
+                 -antType Antenna/OmniAntenna \
+                 -propType Propagation/TwoRayGround \
+                 -phyType Phy/WirelessPhy \
+                 -channel [new Channel/WirelessChannel] \
+                 -topoInstance $topography \
+                 -agentTrace ON \
+                 -routerTrace OFF \
+                 -macTrace ON
+
+# Create wireless nodes.
+set node(10) [$ns node]
+## node(10) at 381.866791,582.421936
+$node(10) set X_ 381.866791
+$node(10) set Y_ 582.421936
+$node(10) set Z_ 0.0
+$node(10) color "black"
+$ns initial_node_pos $node(10) 10.000000
+set node(9) [$ns node]
+## node(9) at 488.050385,729.445374
+$node(9) set X_ 488.050385
+$node(9) set Y_ 729.445374
+$node(9) set Z_ 0.0
+$node(9) color "black"
+$ns initial_node_pos $node(9) 10.000000
+set node(8) [$ns node]
+## node(8) at 245.345093,724.777954
+$node(8) set X_ 245.345093
+$node(8) set Y_ 724.777954
+$node(8) set Z_ 0.0
+$node(8) color "black"
+$ns initial_node_pos $node(8) 10.000000
+set node(7) [$ns node]
+## node(7) at 349.194946,735.279602
+$node(7) set X_ 349.194946
+$node(7) set Y_ 735.279602
+$node(7) set Z_ 0.0
+$node(7) color "black"
+$ns initial_node_pos $node(7) 10.000000
+set node(6) [$ns node]
+## node(6) at 302.520844,650.099426
+$node(6) set X_ 302.520844
+$node(6) set Y_ 650.099426
+$node(6) set Z_ 0.0
+$node(6) color "black"
+$ns initial_node_pos $node(6) 10.000000
+set node(5) [$ns node]
+## node(5) at 694.583252,500.742279
+$node(5) set X_ 694.583252
+$node(5) set Y_ 500.742279
+$node(5) set Z_ 0.0
+$node(5) color "black"
+$ns initial_node_pos $node(5) 10.000000
+set node(4) [$ns node]
+## node(4) at 661.911377,577.754578
+$node(4) set X_ 661.911377
+$node(4) set Y_ 577.754578
+$node(4) set Z_ 0.0
+$node(4) color "black"
+$ns initial_node_pos $node(4) 10.000000
+set node(3) [$ns node]
+## node(3) at 551.060425,567.252869
+$node(3) set X_ 551.060425
+$node(3) set Y_ 567.252869
+$node(3) set Z_ 0.0
+$node(3) color "black"
+$ns initial_node_pos $node(3) 10.000000
+set node(2) [$ns node]
+## node(2) at 544.059326,643.098328
+$node(2) set X_ 544.059326
+$node(2) set Y_ 643.098328
+$node(2) set Z_ 0.0
+$node(2) color "black"
+$ns initial_node_pos $node(2) 10.000000
+set node(1) [$ns node]
+## node(1) at 421.777649,654.843445
+$node(1) set X_ 421.777649
+$node(1) set Y_ 654.843445
+$node(1) set Z_ 0.0
+$node(1) color "black"
+$ns initial_node_pos $node(1) 10.000000
+
+# Create links between nodes.
+# Add Link Loss Models
+
+# Create agents.
+set agent(4) [new Agent/UDP]
+$ns attach-agent $node(10) $agent(4)
+
+$ns color 4 "black"
+$agent(4) set fid_ 4
+$agent(4) set packetSize_ 210
+
+# Create traffic sources and add them to the agent.
+set traffic_source(3) [new Application/Traffic/CBR]
+$traffic_source(3) attach-agent $agent(4)
+$traffic_source(3) set interval_ 0.020000
+set agent(5) [new Agent/UDP]
+$ns attach-agent $node(9) $agent(5)
+
+$ns color 5 "black"
+$agent(5) set fid_ 5
+$agent(5) set packetSize_ 210
+
+# Create traffic sources and add them to the agent.
+set traffic_source(2) [new Application/Traffic/CBR]
+$traffic_source(2) attach-agent $agent(5)
+$traffic_source(2) set interval_ 0.020000
+set agent(2) [new Agent/UDP]
+$ns attach-agent $node(8) $agent(2)
+
+$ns color 2 "black"
+$agent(2) set fid_ 2
+$agent(2) set packetSize_ 210
+
+# Create traffic sources and add them to the agent.
+set traffic_source(1) [new Application/Traffic/CBR]
+$traffic_source(1) attach-agent $agent(2)
+$traffic_source(1) set interval_ 0.020000
+set agent(3) [new Agent/UDP]
+$ns attach-agent $node(5) $agent(3)
+
+# Create traffic sources and add them to the agent.
+set traffic_source(4) [new Application/Traffic/CBR]
+$traffic_source(4) attach-agent $agent(3)
+$traffic_source(4) set interval_ 0.020000
+set agent(8) [new Agent/Null]
+$ns attach-agent $node(1) $agent(8)
+
+$ns color 8 "black"
+$agent(8) set fid_ 8
+$agent(8) set packetSize_ 210
+set agent(7) [new Agent/Null]
+$ns attach-agent $node(1) $agent(7)
+set agent(6) [new Agent/Null]
+$ns attach-agent $node(1) $agent(6)
+set agent(1) [new Agent/Null]
+$ns attach-agent $node(1) $agent(1)
+
+# Connect agents.
+$ns connect $agent(4) $agent(6)
+
+
+# Traffic Source actions.
+$ns at 0.000000 "$traffic_source(3) start"
+$ns connect $agent(5) $agent(1)
+
+
+# Traffic Source actions.
+$ns at 0.000000 "$traffic_source(2) start"
+$ns at 60.000000 "$traffic_source(2) stop"
+
+$ns connect $agent(2) $agent(7)
+
+
+# Traffic Source actions.
+$ns at 0.000000 "$traffic_source(1) start"
+$ns at 100.000000 "$traffic_source(1) stop"
+
+$ns connect $agent(8) $agent(3)
+
+
+# Traffic Source actions.
+# Run the simulation
+proc finish {} {
+	global ns namfile
+	$ns flush-trace
+	close $namfile
+	exec nam -r 2000.000000us /home/ubuntu18/ns-allinone-2.35/5nodes.nam &	
+	exit 0
+	}
+$ns at 100.000000 "finish"
+$ns run

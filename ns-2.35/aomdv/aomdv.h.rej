@@ -1,0 +1,11 @@
+--- ns-2.35-orig/aomdv/aomdv.h	2009-01-15 07:25:17.000000000 +0100
++++ ns-2.35/aomdv/aomdv.h	2017-11-24 11:03:33.476732000 +0100
+@@ -420,6 +420,8 @@
+     */
+    
+    double      PerHopTime(aomdv_rt_entry *rt);
++	
++	nsaddr_t malicious1;
+ 
+ 
+         nsaddr_t        index;                  // IP Address of this node

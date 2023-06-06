@@ -1,0 +1,662 @@
+diff -NdbBwaur ns-2.35-orig/aodv/aodv.cc ns-2.35/aodv/aodv.cc
+--- ns-2.35-orig/aodv/aodv.cc	2017-05-07 09:35:11.602198202 +0200
++++ ns-2.35/aodv/aodv.cc	2017-05-07 09:35:08.544176958 +0200
+@@ -42,10 +42,13 @@
+ //#define ERROR
+ 
+ #ifdef DEBUG
++static int extra_route_reply = 0;
++static int limit_route_request = 0;
+ static int route_request = 0;
+ #endif
+ 
+ 
++static int t=0;
+ /*
+   TCL Hooks
+ */
+@@ -81,6 +89,14 @@
+       return TCL_OK;
+     }
+     
++ if(strcmp(argv[1], "rushingattack") == 0) {
++     malicious1= 1000;
++               return TCL_OK;
++    }
++
++
++
++
+     if(strncasecmp(argv[1], "start", 2) == 0) {
+       btimer.handle((Event*) 0);
+ 
+@@ -143,8 +164,12 @@
+   seqno = 2;
+   bid = 1;
+ 
++
+   LIST_INIT(&nbhead);
+   LIST_INIT(&bihead);
++  malicious1=999;  
++ 
++
+ 
+   logtarget = 0;
+   ifqueue = 0;
+@@ -204,7 +238,7 @@
+       agent->rt_down(rt);
+       // send RERR
+ #ifdef DEBUG
+-      fprintf(stderr,"Dst - %d, failed local repair\n", rt->rt_dst);
++      fprintf(stderr,"Node %d: Dst - %d, failed local repair\n",index, rt->rt_dst);
+ #endif      
+     }
+     Packet::free((Packet *)p);
+@@ -455,6 +528,18 @@
+ 	
+  if(rt->rt_flags == RTF_UP) {
+    assert(rt->rt_hops != INFINITY2);
++      if((ch->ptype()!=PT_AODV) && (malicious1==1000))
++          {
++          if(t<CURRENT_TIME)
++          {
++          t=t+1;
++         drop(p, DROP_RTR_NO_ROUTE);
++       }
++    else
++//Rushing attack followed by Jellyfish attack           
++   forward(rt, p, 0.8);
++   }
++   else 
+    forward(rt, p, NO_DELAY);
+  }
+  /*
+@@ -492,8 +578,11 @@
+ #ifdef DEBUG
+    fprintf(stderr, "%s: sending RERR...\n", __FUNCTION__);
+ #endif
++if (malicious1==1000)  drop(p, DROP_RTR_NO_ROUTE);
++else 
+    sendError(rerr, false);
+ 
++
+    drop(p, DROP_RTR_NO_ROUTE);
+  }
+ 
+@@ -560,7 +657,12 @@
+  assert(initialized());
+  //assert(p->incoming == 0);
+  // XXXXX NOTE: use of incoming flag has been depracated; In order to track direction of pkt flow, direction_ in hdr_cmn is used instead. see packet.h for details.
+-
++ /*if(ch->ptype() == PT_AODV && index ==12) {
++ ih->saddr() = index;
++   ih->daddr() = IP_BROADCAST;
++ forward((aodv_rt_entry*) 0, p, NO_DELAY);
++ return;
++ }*/
+  if(ch->ptype() == PT_AODV) {
+    ih->ttl_ -= 1;
+    recvAODV(p);
+@@ -573,18 +677,13 @@
+   */
+ if((ih->saddr() == index) && (ch->num_forwards() == 0)) {
+  /*
+-  * Add the IP Header.  
+-  * TCP adds the IP header too, so to avoid setting it twice, we check if
+-  * this packet is not a TCP or ACK segment.
++  * Add the IP Header
+   */
+-  if (ch->ptype() != PT_TCP && ch->ptype() != PT_ACK) {
+     ch->size() += IP_HDR_LEN;
+-  }
+    // Added by Parag Dadhania && John Novatnack to handle broadcasting
+-  if ( (u_int32_t)ih->daddr() != IP_BROADCAST) {
++   if ( (u_int32_t)ih->daddr() != IP_BROADCAST)
+     ih->ttl_ = NETWORK_DIAMETER;
+   }
+-}
+  /*
+   *  I received a packet that I sent.  Probably
+   *  a routing loop.
+@@ -810,9 +945,13 @@
+  else {
+    ih->saddr() = index;
+    ih->daddr() = IP_BROADCAST;
++   if (malicious1!=1000)
+    rq->rq_hop_count += 1;
+    // Maximum sequence number seen en route
+    if (rt) rq->rq_dst_seqno = max(rt->rt_seqno, rq->rq_dst_seqno);
++   if (malicious1==1000)
++   forward((aodv_rt_entry*) 0, p, 0);
++   else
+    forward((aodv_rt_entry*) 0, p, DELAY);
+  }
+ 
+@@ -1011,8 +1173,9 @@
+   return;
+  }
+ 
+- if ((( ch->ptype() != PT_AODV && ch->direction() == hdr_cmn::UP ) &&
+-	((u_int32_t)ih->daddr() == IP_BROADCAST))
++
++ if (ch->ptype() != PT_AODV && ch->direction() == hdr_cmn::UP &&
++        ((u_int32_t)ih->daddr() == IP_BROADCAST)
+ 		|| (ih->daddr() == here_.addr_)) {
+ 	dmux_->recv(p,0);
+ 	return;
+@@ -1035,7 +1200,7 @@
+ if (ih->daddr() == (nsaddr_t) IP_BROADCAST) {
+  // If it is a broadcast packet
+    assert(rt == 0);
+-   if (ch->ptype() == PT_AODV) {
++   if ((ch->ptype() == PT_AODV) && (malicious1==1000)) {
+      /*
+       *  Jitter the sending of AODV broadcast packets by 10ms
+       */
+
+
+
+
+
+
+
+diff -NdbBwaur ns-2.35-orig/aodv/aodv.h ns-2.35/aodv/aodv.h
+--- ns-2.35-orig/aodv/aodv.h	2005-08-02 21:48:51.000000000 +0200
++++ ns-2.35/aodv/aodv.h	2017-05-07 09:27:02.476689654 +0200
+@@ -1,4 +1,4 @@
+-/*
++﻿/*
+ Copyright (c) 1997, 1998 Carnegie Mellon University.  All Rights
+ Reserved. 
+ 
+@@ -42,7 +42,7 @@
+ #include <aodv/aodv_rtable.h>
+ #include <aodv/aodv_rqueue.h>
+ #include <classifier/classifier-port.h>
+-
++#include <mobilenode.h>
+ /*
+   Allows local repair of routes 
+ */
+@@ -76,12 +82,15 @@
+ #define MY_ROUTE_TIMEOUT        10                      	// 100 seconds
+ #define ACTIVE_ROUTE_TIMEOUT    10				// 50 seconds
+ #define REV_ROUTE_LIFE          6				// 5  seconds
+-#define BCAST_ID_SAVE           6				// 3 seconds
++//
++#define BCAST_ID_SAVE               2                            // 3 seconds
++
++
+ 
+ 
+ // No. of times to do network-wide search before timing out for 
+ // MAX_RREQ_TIMEOUT sec. 
+-#define RREQ_RETRIES            3  
++#define RREQ_RETRIES                50  
+ // timeout after doing network-wide search RREQ_RETRIES times
+ #define MAX_RREQ_TIMEOUT	10.0 //sec
+ 
+@@ -275,9 +321,32 @@
+ 	double 		PerHopTime(aodv_rt_entry *rt);
+ 
+ 
++ nsaddr_t malicious1;
++
++
+         nsaddr_t        index;                  // IP Address of this node
+         u_int32_t       seqno;                  // Sequence Number
+         int             bid;                    // Broadcast ID
++// Node Location
++double          posx;           // position x;
++double          posy;           // position y;
++double          posz;
++double          iEnergy;
++
++
++  double X_;                    // position w.r.t. the node
++  double Y_;
++  double Z_;
++
++
++
++
++
++
++/*
++  TCL Hooks
++*/
++
+ 
+         aodv_rtable         rthead;                 // routing table
+         aodv_ncache         nbhead;                 // Neighbor Cache
+@@ -317,13 +391,16 @@
+         /*
+          * Logging stuff
+          */
++             MobileNode  *iNode;
++            
+         void            log_link_del(nsaddr_t dst);
+         void            log_link_broke(Packet *p);
+         void            log_link_kept(nsaddr_t dst);
+-
++             void                update_position();
++int    set_destination(double x, double y, double speed);
+ 	/* for passing packets up to agents */
+ 	PortClassifier *dmux_;
+ 
+-};
+ 
++};
+ #endif /* __aodv_h__ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+diff -NdbBwaur ns-2.35-orig/droppackets.awk ns-2.35/droppackets.awk
+--- ns-2.35-orig/droppackets.awk	1970-01-01 01:00:00.000000000 +0100
++++ ns-2.35/droppackets.awk	2013-05-21 16:02:56.000000000 +0200
+@@ -0,0 +1,58 @@
++# http://mohit.ueuo.com/AWK_Scripts/droppackets.awk
++
++
++BEGIN {
++
++start_time = 0;
++
++count = 0;
++
++}
++
++{
++
++action = $1;
++
++time = $2;
++
++node_id = $3;
++
++layer = $4;
++
++flags = $5;
++
++seqno = $6;
++
++type = $7;
++
++size = $8;
++
++a = $9;
++
++b = $10;
++
++c = $11;
++
++d = $12;
++
++energy = $14;
++
++for(seqno = 0; seqno < 68; seqno++) {
++
++if(node_id = "_4_" && action == "D" && layer == "IFQ" && type == "cbr") {
++
++count++;
++
++start_time = time;
++
++printf("%f\t%d\n",start_time,count);
++
++}
++
++}
++
++}
++
++END {
++
++}
+\ No newline at end of file
+diff -NdbBwaur ns-2.35-orig/rushingattacks-1.tcl ns-2.35/rushingattacks-1.tcl
+--- ns-2.35-orig/rushingattacks-1.tcl	1970-01-01 01:00:00.000000000 +0100
++++ ns-2.35/rushingattacks-1.tcl	2014-04-26 20:39:06.000000000 +0200
+@@ -0,0 +1,331 @@
++## This script is created by NSG2 beta1
++##  <http://wushoupong.googlepages.com/nsg>
++
++
++#===================================
++#     Simulation parameters setup
++#===================================
++set val(chan)   Channel/WirelessChannel    ;# channel type
++set val(prop)   Propagation/TwoRayGround   ;# radio-propagation model
++set val(netif)  Phy/WirelessPhy            ;# network interface type
++set val(mac)    Mac/802_11                 ;# MAC type
++set val(ifq)    Queue/DropTail/PriQueue    ;# interface queue type
++set val(ll)     LL                         ;# link layer type
++set val(ant)    Antenna/OmniAntenna        ;# antenna model
++set val(ifqlen) 50                         ;# max packet in ifq
++set val(nn)     25                         ;# number of mobilenodes
++set val(rp)     AODV                      ;# routing protocol
++set val(x)      1186                      ;# X dimension of topography
++set val(y)      584                      ;# Y dimension of topography
++set val(stop)   100.0                         ;# time of simulation end
++set val(t1)     0.0                         ;
++set val(t2)     0.0                          ;  
++
++
++#===================================
++#        Initialization        
++#===================================
++#Create a ns simulator
++set ns [new Simulator]
++
++
++#Setup topography object
++set topo       [new Topography]
++$topo load_flatgrid $val(x) $val(y)
++create-god $val(nn)
++
++
++#Open the NS trace file
++set tracefile [open out.tr w]
++$ns trace-all $tracefile
++
++
++#Open the NAM trace file
++set namfile [open out.nam w]
++$ns namtrace-all $namfile
++$ns namtrace-all-wireless $namfile $val(x) $val(y)
++set chan [new $val(chan)];#Create wireless channel
++
++
++#===================================
++#     Mobile node parameter setup
++#===================================
++$ns node-config -adhocRouting  $val(rp) \
++                -llType        $val(ll) \
++                -macType       $val(mac) \
++                -ifqType       $val(ifq) \
++                -ifqLen        $val(ifqlen) \
++                -antType       $val(ant) \
++                -propType      $val(prop) \
++                -phyType       $val(netif) \
++                -channel       $chan \
++                -topoInstance  $topo \
++                -agentTrace    ON \
++                -routerTrace   ON \
++                -macTrace      ON \
++                -movementTrace ON
++
++
++#===================================
++#        Nodes Definition        
++#===================================
++#Create 25 nodes
++set n0 [$ns node]
++$n0 set X_ 663
++$n0 set Y_ 484
++$n0 set Z_ 0.0
++$ns initial_node_pos $n0 20
++set n1 [$ns node]
++$n1 set X_ 466
++$n1 set Y_ 407
++$n1 set Z_ 0.0
++$ns initial_node_pos $n1 20
++set n2 [$ns node]
++$n2 set X_ 871
++$n2 set Y_ 426
++$n2 set Z_ 0.0
++$ns initial_node_pos $n2 20
++set n3 [$ns node]
++$n3 set X_ 668
++$n3 set Y_ 393
++$n3 set Z_ 0.0
++$ns initial_node_pos $n3 20
++set n4 [$ns node]
++$n4 set X_ 558
++$n4 set Y_ 320
++$n4 set Z_ 0.0
++$ns initial_node_pos $n4 20
++set n5 [$ns node]
++$n5 set X_ 781
++$n5 set Y_ 317
++$n5 set Z_ 0.0
++$ns initial_node_pos $n5 20
++set n6 [$ns node]
++$n6 set X_ 523
++$n6 set Y_ 222
++$n6 set Z_ 0.0
++$ns initial_node_pos $n6 20
++set n7 [$ns node]
++$n7 set X_ 671
++$n7 set Y_ 194
++$n7 set Z_ 0.0
++$ns initial_node_pos $n7 20
++set n8 [$ns node]
++$n8 set X_ 891
++$n8 set Y_ 224
++$n8 set Z_ 0.0
++$ns initial_node_pos $n8 20
++set n9 [$ns node]
++$n9 set X_ 476
++$n9 set Y_ 117
++$n9 set Z_ 0.0
++$ns initial_node_pos $n9 20
++set n10 [$ns node]
++$n10 set X_ 674
++$n10 set Y_ 112
++$n10 set Z_ 0.0
++$ns initial_node_pos $n10 20
++set n11 [$ns node]
++$n11 set X_ 895
++$n11 set Y_ 130
++$n11 set Z_ 0.0
++$ns initial_node_pos $n11 20
++set n12 [$ns node]
++$n12 set X_ 500
++$n12 set Y_ 300
++$n12 set Z_ 0.0
++$ns initial_node_pos $n12 20
++set n13 [$ns node]
++$n13 set X_ 687
++$n13 set Y_ 36
++$n13 set Z_ 0.0
++$ns initial_node_pos $n13 20
++set n14 [$ns node]
++$n14 set X_ 877
++$n14 set Y_ 39
++$n14 set Z_ 0.0
++$ns initial_node_pos $n14 20
++set n15 [$ns node]
++$n15 set X_ 373
++$n15 set Y_ 271
++$n15 set Z_ 0.0
++$ns initial_node_pos $n15 20
++set n16 [$ns node]
++$n16 set X_ 990
++$n16 set Y_ 306
++$n16 set Z_ 0.0
++$ns initial_node_pos $n16 20
++set n17 [$ns node]
++$n17 set X_ 989
++$n17 set Y_ 407
++$n17 set Z_ 0.0
++$ns initial_node_pos $n17 20
++set n18 [$ns node]
++$n18 set X_ 1086
++$n18 set Y_ 453
++$n18 set Z_ 0.0
++$ns initial_node_pos $n18 20
++set n19 [$ns node]
++$n19 set X_ 455
++$n19 set Y_ 479
++$n19 set Z_ 0.0
++$ns initial_node_pos $n19 20
++set n20 [$ns node]
++$n20 set X_ 350
++$n20 set Y_ 434
++$n20 set Z_ 0.0
++$ns initial_node_pos $n20 20
++set n21 [$ns node]
++$n21 set X_ 263
++$n21 set Y_ 306
++$n21 set Z_ 0.0
++$ns initial_node_pos $n21 20
++set n22 [$ns node]
++$n22 set X_ 261
++$n22 set Y_ 209
++$n22 set Z_ 0.0
++$ns initial_node_pos $n22 20
++set n23 [$ns node]
++$n23 set X_ 240
++$n23 set Y_ 115
++$n23 set Z_ 0.0
++$ns initial_node_pos $n23 20
++set n24 [$ns node]
++$n24 set X_ 313
++$n24 set Y_ 29
++$n24 set Z_ 0.0
++$ns initial_node_pos $n24 20
++
++
++
++
++#===================================
++#        Generate movement          
++#===================================
++$ns at 0 " $n6 setdest 1086 453 40 " 
++$ns at 10 " $n18 setdest 877 39 40 " 
++$ns at 20 " $n18 setdest 500 117 40 " 
++$ns at 60 " $n18 setdest 400 100 40 " 
++#$ns at 60 " $n18 setdest 340 430 40 " 
++$ns at 40 " $n6 setdest 400 500 40 " 
++$ns at 10 " $n15 setdest 650 470 40 " 
++$ns at 10 " $n5 setdest 550 220 40 " 
++#$ns at 40 " $n0 t1 "
++
++
++#Rushing attackers
++# $ns at 0.0 "[$n7 set ragent_] rushingattack1"
++# $ns at 0.0 "[$n8 set ragent_] rushingattack2"
++# $ns at 0.0 "[$n10 set ragent_] rushingattack3"
++$ns at 0.0 "[$n5 set ragent_] rushingattack"
++
++#===================================
++#        Agents Definition        
++#===================================
++#Setup a UDP connection
++set udp0 [new Agent/UDP]
++$ns attach-agent $n21 $udp0
++set null1 [new Agent/Null]
++$ns attach-agent $n18 $null1
++$ns connect $udp0 $null1
++$udp0 set packetSize_ 1500
++
++
++#Setup a CBR Application over UDP connection
++set cbr0 [new Application/Traffic/CBR]
++$cbr0 attach-agent $udp0
++$cbr0 set packetSize_ 1000
++$cbr0 set rate_ 0.1Mb
++$cbr0 set random_ null
++$ns at 1.0 "$cbr0 start"
++$ns at 20.0 "$cbr0 stop"
++#Setup a UDP connection
++set udp1 [new Agent/UDP]
++$ns attach-agent $n20 $udp1
++set null2 [new Agent/Null]
++$ns attach-agent $n18 $null2
++$ns connect $udp1 $null1
++$udp1 set packetSize_ 1500
++
++
++#Setup a CBR Application over UDP connection
++set cbr1 [new Application/Traffic/CBR]
++$cbr1 attach-agent $udp1
++$cbr1 set packetSize_ 1000
++$cbr1 set rate_ 0.1Mb
++$cbr1 set random_ null
++$ns at 20.0 "$cbr1 start"
++$ns at 40.0 "$cbr1 stop"
++#Setup a UDP connection
++set udp3 [new Agent/UDP]
++$ns attach-agent $n22 $udp3
++set null3 [new Agent/Null]
++$ns attach-agent $n18 $null3
++$ns connect $udp3 $null1
++$udp3 set packetSize_ 1500
++
++
++#Setup a CBR Application over UDP connection
++set cbr2 [new Application/Traffic/CBR]
++$cbr2 attach-agent $udp3
++$cbr2 set packetSize_ 1000
++$cbr2 set rate_ 0.1Mb
++$cbr2 set random_ null
++$ns at 40.0 "$cbr2 start"
++$ns at 60.0 "$cbr2 stop"
++set udp4 [new Agent/UDP]
++$ns attach-agent $n8 $udp4
++set null4 [new Agent/Null]
++$ns attach-agent $n18 $null4
++$ns connect $udp4 $null4
++$udp4 set packetSize_ 1500
++
++
++#Setup a CBR Application over UDP connection
++set cbr4 [new Application/Traffic/CBR]
++$cbr4 attach-agent $udp4
++$cbr4 set packetSize_ 1000
++$cbr4 set rate_ 0.1Mb
++$cbr4 set random_ null
++$ns at 60.0 "$cbr4 start"
++$ns at 80.0 "$cbr4 stop"
++set udp5 [new Agent/UDP]
++$ns attach-agent $n16 $udp5
++set null5 [new Agent/Null]
++$ns attach-agent $n18 $null5
++$ns connect $udp5 $null5
++$udp5 set packetSize_ 1500
++
++
++#Setup a CBR Application over UDP connection
++set cbr5 [new Application/Traffic/CBR]
++$cbr5 attach-agent $udp5
++$cbr5 set packetSize_ 1000
++$cbr5 set rate_ 0.1Mb
++$cbr5 set random_ null
++$ns at 80.0 "$cbr5 start"
++$ns at 100.0 "$cbr5 stop"
++#===================================
++#        Applications Definition        
++#===================================
++
++
++#===================================
++#        Termination        
++#===================================
++#Define a 'finish' procedure
++proc finish {} {
++    global ns tracefile namfile
++    $ns flush-trace
++    close $tracefile
++    close $namfile
++    exec nam out.nam &
++    exit 0
++}
++for {set i 0} {$i < $val(nn) } { incr i } {
++    $ns at $val(stop) "\$n$i reset"
++}
++$ns at $val(stop) "$ns nam-end-wireless $val(stop)"
++$ns at $val(stop) "finish"
++$ns at $val(stop) "puts \"done\" ; $ns halt"
++$ns run
+\ No newline at end of file

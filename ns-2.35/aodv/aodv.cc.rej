@@ -1,0 +1,17 @@
+--- ns-2.35-orig/aodv/aodv.cc	2017-05-07 09:35:11.602198202 +0200
++++ ns-2.35/aodv/aodv.cc	2017-05-07 09:35:08.544176958 +0200
+@@ -84,6 +92,14 @@
+       return TCL_OK;
+     }
+     
++ if(strcmp(argv[1], "rushingattack") == 0) {
++     malicious1= 1000;
++               return TCL_OK;
++    }
++
++
++
++
+     if(strncasecmp(argv[1], "start", 2) == 0) {
+       btimer.handle((Event*) 0);
+ 

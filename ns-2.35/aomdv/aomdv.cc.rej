@@ -1,0 +1,333 @@
+--- ns-2.35-orig/aomdv/aomdv.cc	2010-04-29 06:52:59.000000000 +0200
++++ ns-2.35/aomdv/aomdv.cc	2017-11-24 11:01:31.538309000 +0100
+@@ -86,6 +86,8 @@
+ #include <aomdv/aomdv_packet.h>
+ #include <random.h>
+ #include <cmu-trace.h>
++#include<iostream>
++#include<fstream>
+ //#include <energy-model.h>
+ 
+ #define max(a,b)        ( (a) > (b) ? (a) : (b) )
+@@ -104,6 +106,7 @@
+ static int route_request = 0;
+ #endif
+ 
++ofstream send_req1,recv_req1;
+ 
+ /*
+  TCL Hooks
+@@ -111,6 +114,50 @@
+ 
+ 
+ int hdr_aomdv::offset_;
++
++// create file
++class send_req1file
++{
++public:
++fstream send_req1;
++send_req1file()
++{
++send_req1.open("sendrequest",ios::out);
++}
++~send_req1file()
++{
++send_req1.close();
++}
++}f11;
++
++class recv_req1file
++{
++public:
++fstream recv_req1;
++recv_req1file()
++{
++recv_req1.open("recvrequest",ios::out);
++}
++~recv_req1file()
++{
++recv_req1.close();
++}
++}f14;
++
++class inter_nodes1
++{
++public:
++fstream int_node1;
++inter_nodes1()
++{
++int_node1.open("Intermediate.txt",ios::out);
++}
++~inter_nodes1()
++{
++int_node1.close();
++}
++}f12;
++
+ static class AOMDVHeaderClass : public PacketHeaderClass {
+ public:
+ 	AOMDVHeaderClass() : PacketHeaderClass("PacketHeader/AOMDV",
+@@ -137,8 +184,19 @@
+ 		
+ 		if(strncasecmp(argv[1], "id", 2) == 0) {
+ 			tcl.resultf("%d", index);
++			cout<<"Index is called"<<endl;
++			return TCL_OK;
++		}
++
++
++		//implementation of jellyfish node
++
++		if(strcmp(argv[1], "jellyfish") == 0) {
++			malicious1=index;
++			cout<<"Malicious node is "<<malicious1<<endl;
+ 			return TCL_OK;
+ 		}
++
+ 		// AOMDV code - should it be removed?
+ 		if (strncasecmp(argv[1], "dump-table", 10) == 0) {
+ 			printf("Node %d: Route table:\n", index);
+@@ -217,6 +275,8 @@
+ 	LIST_INIT(&nbhead);
+ 	LIST_INIT(&bihead);
+ 	
++	malicious1=999;	
++
+ 	logtarget = 0;
+ 	AOMDVifqueue = 0;
+ }
+@@ -569,7 +629,7 @@
+ 	struct hdr_cmn *ch = HDR_CMN(p);
+ 	struct hdr_ip *ih = HDR_IP(p);
+ 	aomdv_rt_entry *rt;
+-	
++	int t;
+ 	/*
+ 	 *  Set the transmit failure callback.  That
+ 	 *  won't change.
+@@ -587,6 +647,19 @@
+    
+ 	if(rt->rt_flags == RTF_UP) {
+ 		assert(rt->rt_hops != INFINITY2);
++
++		if((ch->ptype()!=PT_AOMDV) && (index==malicious1))
++		{
++		if(t<CURRENT_TIME)
++		{
++			t=t+1;
++			drop(p,DROP_RTR_NO_ROUTE);
++		}
++		else
++			
++			forward(rt, p , 0.8);
++
++		}
+ 		forward(rt, p, NO_AOMDV_DELAY);
+ 	}
+ 	/*
+@@ -624,6 +697,9 @@
+ #ifdef DEBUG
+ 		fprintf(stderr, "%s: sending RERR...\n", __FUNCTION__);
+ #endif
++
++		if(index==malicious1);
++		else
+ 		sendError(rerr, false);
+ 		
+ 		drop(p, DROP_RTR_NO_ROUTE);
+@@ -788,13 +864,22 @@
+ 	AOMDVBroadcastID* b = NULL;
+ 	bool kill_request_propagation = false;
+ 	AOMDV_Path* reverse_path = NULL;
++	static int count=0;
+ 	
+ 	/*
+ 	 * Drop if:
+ 	 *      - I'm the source
+ 	 *      - I recently heard this request.
+ 	 */
+-	
++	f14.recv_req1<<"receive packet =  "<<++count<<endl;
++	f14.recv_req1<<"rq->rq_src = "<<rq->rq_src<<endl;
++//f4.recv_req<<"rq->rq_src_seqno = "<<rq->rq_src_seqno<<endl;
++	f14.recv_req1<<"rq_dst = "<<rq->rq_dst<<endl;
++//f4.recv_req<<"rq_dst_seqno = "<<rq->rq_dst_seqno<<endl;
++//f4.recv_req<<" Forward the route request node"<<endl;
++	f14.recv_req1<<"recv Request "<<endl;
++	f14.recv_req1<<" Inter Node = "<<index<<endl;
++
+ 	if(rq->rq_src == index) {
+ #ifdef DEBUG
+ 		fprintf(stderr, "%s: got my own REQUEST\n", __FUNCTION__);
+@@ -828,6 +913,7 @@
+    if(rt0 == 0) { /* if not in the route table */
+ 		// create an entry for the reverse route.
+ 		rt0 = rtable.rt_add(rq->rq_src);
++	f14.recv_req1<<" enter reverse Routing Table"<<endl<<endl;
+    }
+ 
+ 	/*
+@@ -845,6 +931,14 @@
+ 		// CHANGE
+ 		rt0->rt_last_hop_count = rt0->path_get_max_hopcount();
+ 		// CHANGE
++
++//f4.recv_req<<"after Updation  Reverse Route "<<endl;
++f14.recv_req1<<"rt0->rt_dst = "<<rt0->rt_dst<<endl;
++f14.recv_req1<<"rq->rq_first_hop= "<<rq->rq_first_hop<<endl;
++//f4.recv_req<<"rt0->rt_seqno = "<<rt0->rt_seqno<<endl;
++//f4.recv_req<<"rt0->hops = "<<rt->rt_hops<<endl;
++//f14.recv_req1<<"rt_nexthop = "<<rt0->rt_nexthop<<endl;
++//f4.recv_req<<"rt0->rt_req_timeout = "<<rt0->rt_req_timeout<<endl;
+ 	}
+ 	/* If a new path with smaller hop count is received 
+ 	(same seqno, better hop count) - try to insert new path in route table. */
+@@ -927,8 +1021,15 @@
+ 	/* Check route entry for RREQ destination */
+ 	rt = rtable.rt_lookup(rq->rq_dst);
+ 
++// First check if I am the destination ..
++f14.recv_req1<<"packet analyzer node  = "<<index<<endl;
++
++f14.recv_req1<< "rq_dst = "<<rq->rq_dst<<endl;
++f14.recv_req1<< "node= "<<index<<endl;
++
+ 	/* I am the intended receiver of the RREQ - so send a RREP */ 
+ 	if (rq->rq_dst == index) {
++f14.recv_req1<<"First check if I am the destination .. reply"<<endl;
+ 		
+ 		if (seqno < rq->rq_dst_seqno) {
+ 			//seqno = max(seqno, rq->rq_dst_seqno)+1;
+@@ -937,7 +1038,7 @@
+ 		/* Make sure seq number is even (why?) */
+ 		if (seqno%2) 
+ 			seqno++;
+-		
++		f14.recv_req1<<"call reply from recv request"<<endl;
+ 		
+ 		sendReply(rq->rq_src,              // IP Destination
+ 					 0,                       // Hop Count
+@@ -1035,10 +1136,21 @@
+ 		}
+ 		else {
+ 			ih->saddr() = index;
++			if(index!=malicious1)
++				rq->rq_hop_count +=1;
+ 			
+ 			// Maximum sequence number seen en route
++f14.recv_req1<<"Can't reply. So forward the  Route Request"<<endl;
++f14.recv_req1<<" forward the packed from route request"<<endl;
++f14.recv_req1<<"node = "<<index<<endl;
++
+ 			if (rt) 
+ 				rq->rq_dst_seqno = max(rt->rt_seqno, rq->rq_dst_seqno);
++
++//jellyfish attack
++			if(index==malicious1)
++					forward((aomdv_rt_entry*) 0,p, 0);
++				
+ 			
+ 			// route advertisement
+ 			if (rt0->rt_advertised_hops == INFINITY)
+@@ -1147,7 +1259,10 @@
+       rt->rt_req_timeout = 0.0; 
+       rt->rt_req_last_ttl = 0;
+       rt->rt_req_cnt = 0;
+-		
++
++	
++	
++	f12.int_node1<<"Intermediate node = "<<rp->rp_first_hop<<endl;	
+       if (ih->daddr() == index) {
+ 			// I am the RREP destination
+ 			
+@@ -1173,6 +1288,8 @@
+       }
+ 		
+    }
++
++
+    /* If I am the intended receipient of the RREP nothing more needs 
+       to be done - so drop packet. */
+    if (ih->daddr() == index) {
+@@ -1183,7 +1300,11 @@
+       table for a path to the RREP dest (i.e. the RREQ source). */ 
+    rt0 = rtable.rt_lookup(ih->daddr());
+    b = id_get(ih->daddr(), rp->rp_bcast_id); // Check for <RREQ src IP, bcast ID> tuple
+-	
++//f12.int_node1<<"Forward path->lasthop"<<endl;	
++//f12.int_node1<<"Intermediate node = "<<forward_path->lasthop<<endl;
++//f12.int_node1<<"Reverse path->nexthop"<<endl;
++//f12.int_node1<<"Intermediate node = " <<reverse_path->nexthop<<endl;
++
+ #ifdef AOMDV_NODE_DISJOINT_PATHS
+ 	
+    if ( (rt0 == NULL) || (rt0->rt_flags != RTF_UP) || (b == NULL) || (b->count) ) {
+@@ -1390,11 +1511,14 @@
+ 	if (ih->daddr() == (nsaddr_t) IP_BROADCAST) {
+ 		// If it is a broadcast packet
+ 		assert(rt == 0);
++
++		if((ch->ptype()==PT_AOMDV) && (index!=malicious1))
++
++	
+ 		/*
+ 		 *  Jitter the sending of broadcast packets by 10ms
+ 		 */
+-		Scheduler::instance().schedule(target_, p,
+-												 0.01 * Random::uniform());
++		Scheduler::instance().schedule(target_, p,0.01 * Random::uniform());
+ 	}
+ 	else { // Not a broadcast packet 
+ 		if(delay > 0.0) {
+@@ -1415,8 +1539,10 @@
+ 	Packet *p = Packet::alloc();
+ 	struct hdr_cmn *ch = HDR_CMN(p);
+ 	struct hdr_ip *ih = HDR_IP(p);
++	static int count_req=0;
+ 	struct hdr_aomdv_request *rq = HDR_AOMDV_REQUEST(p);
+ 	aomdv_rt_entry *rt = rtable.rt_lookup(dst);
++	cout<<" enter sendRequest 8"<<endl;
+ 	assert(rt);
+ 	
+ 	/*
+@@ -1528,7 +1654,33 @@
+ 	rq->rq_src_seqno = seqno;
+ 	rq->rq_timestamp = CURRENT_TIME;
+ 	
++	// TO write the sendrequest file
++
++//f1.send_req<<"send Request = "<<++count_req<<endl;
++
++f11.send_req1<<"source = "<<rq->rq_src<<endl<<endl;
++
++//f1.send_req<<"rq_hop_count"<<rq->rq_hop_count<<endl;
++//f1.send_req<<"rq_type"<<rq->rq_type<<endl;
++//f1.send_req<<"rt->rq_dst = "<<rq->rq_dst<<endl;
++//f1.send_req<<"rt->rq_dst_sequno = "<<rq->rq_dst_seqno<<endl;
++f11.send_req1<<"rt->rq_src_seqno = "<<rq->rq_src_seqno<<endl;
++f11.send_req1<<"rt->rq_timestamp = "<<rq->rq_timestamp<<endl;
++
++f11.send_req1<<"Routing Table "<<endl<<endl;
++
++f11.send_req1<<"rt->dst = "<<rt->rt_dst<<endl;
++f11.send_req1<<"rt->dst_sequno = "<<rt->rt_seqno<<endl;
++f11.send_req1<<"rt->hops = "<<rt->rt_hops<<endl;
++f11.send_req1<<"rq->rq_first_hop = "<<rq->rq_first_hop<<endl;
++
++
++//f11.send_req1<<"ch->next_hop_ = "<<path->next_hop<<endl;
++
++//f11.send_req1<<"rt->nexthop = "<<nexthop<<endl;
++	
+ 	Scheduler::instance().schedule(target_, p, 0.);
++send_req1.close();
+ 	
+ }
+ 
+@@ -1855,3 +2007,4 @@
+ 	}
+ 	
+ }
++

@@ -1,0 +1,399 @@
+#------------------------------------------------------- 
+# This ns script has been created by the nam editor.
+# If you edit it manually, the nam editor might not
+# be able to open it properly in the future.
+#
+# EDITING BY HAND IS AT YOUR OWN RISK!
+#------------------------------------------------------- 
+# Create a new simulator object.
+set ns [new Simulator]
+# Create a nam trace datafile.
+set namfile [open /home/ubuntu18/ns-allinone-2.35/20nodes.nam w]
+$ns namtrace-all $namfile
+
+# Create wired nodes.
+
+# ----- Setup wireless environment. ----
+set wireless_tracefile [open /home/ubuntu18/ns-allinone-2.35/20nodes.trace w]
+set topography [new Topography]
+$ns trace-all $wireless_tracefile
+$ns namtrace-all-wireless $namfile 636.568665 823.032471
+$topography load_flatgrid 636.568665 823.032471
+#
+# Create God
+#
+set god_ [create-god 30]
+#global node setting
+$ns node-config -adhocRouting DSR \
+                 -llType LL \
+                 -macType Mac/802_11 \
+                 -ifqType Queue/DropTail/PriQueue \
+                 -ifqLen 50 \
+                 -antType Antenna/OmniAntenna \
+                 -propType Propagation/TwoRayGround \
+                 -phyType Phy/WirelessPhy \
+                 -channel [new Channel/WirelessChannel] \
+                 -topoInstance $topography \
+                 -agentTrace ON \
+                 -routerTrace OFF \
+                 -macTrace ON
+
+# Create wireless nodes.
+set node(30) [$ns node]
+## node(30) at 567.176697,769.684998
+$node(30) set X_ 567.176697
+$node(30) set Y_ 769.684998
+$node(30) set Z_ 0.0
+$node(30) color "black"
+$ns initial_node_pos $node(30) 10.000000
+set node(29) [$ns node]
+## node(29) at 356.207764,677.740906
+$node(29) set X_ 356.207764
+$node(29) set Y_ 677.740906
+$node(29) set Z_ 0.0
+$node(29) color "black"
+$ns initial_node_pos $node(29) 10.000000
+set node(28) [$ns node]
+## node(28) at 280.636658,617.913208
+$node(28) set X_ 280.636658
+$node(28) set Y_ 617.913208
+$node(28) set Z_ 0.0
+$node(28) color "black"
+$ns initial_node_pos $node(28) 10.000000
+set node(27) [$ns node]
+## node(27) at 409.107361,628.619141
+$node(27) set X_ 409.107361
+$node(27) set Y_ 628.619141
+$node(27) set Z_ 0.0
+$node(27) color "black"
+$ns initial_node_pos $node(27) 10.000000
+set node(26) [$ns node]
+## node(26) at 581.661499,692.854553
+$node(26) set X_ 581.661499
+$node(26) set Y_ 692.854553
+$node(26) set Z_ 0.0
+$node(26) color "black"
+$ns initial_node_pos $node(26) 10.000000
+set node(25) [$ns node]
+## node(25) at 543.875610,605.318054
+$node(25) set X_ 543.875610
+$node(25) set Y_ 605.318054
+$node(25) set Z_ 0.0
+$node(25) color "black"
+$ns initial_node_pos $node(25) 10.000000
+set node(24) [$ns node]
+## node(24) at 410.996643,561.234985
+$node(24) set X_ 410.996643
+$node(24) set Y_ 561.234985
+$node(24) set Z_ 0.0
+$node(24) color "black"
+$ns initial_node_pos $node(24) 10.000000
+set node(23) [$ns node]
+## node(23) at 205.065643,565.013550
+$node(23) set X_ 205.065643
+$node(23) set Y_ 565.013550
+$node(23) set Z_ 0.0
+$node(23) color "black"
+$ns initial_node_pos $node(23) 10.000000
+set node(22) [$ns node]
+## node(22) at 132.643417,653.809448
+$node(22) set X_ 132.643417
+$node(22) set Y_ 653.809448
+$node(22) set Z_ 0.0
+$node(22) color "black"
+$ns initial_node_pos $node(22) 10.000000
+set node(21) [$ns node]
+## node(21) at 200.027573,714.896057
+$node(21) set X_ 200.027573
+$node(21) set Y_ 714.896057
+$node(21) set Z_ 0.0
+$node(21) color "black"
+$ns initial_node_pos $node(21) 10.000000
+set node(20) [$ns node]
+## node(20) at 107.079483,521.691772
+$node(20) set X_ 107.079483
+$node(20) set Y_ 521.691772
+$node(20) set Z_ 0.0
+$node(20) color "black"
+$ns initial_node_pos $node(20) 10.000000
+$ns at 0.000000 "$node(20) setdest 219.830963 580.549805 1.271895"
+set node(19) [$ns node]
+## node(19) at 75.022568,676.143372
+$node(19) set X_ 75.022568
+$node(19) set Y_ 676.143372
+$node(19) set Z_ 0.0
+$node(19) color "black"
+$ns initial_node_pos $node(19) 10.000000
+$ns at 0.000000 "$node(19) setdest 134.613037 664.083313 0.607986"
+set node(18) [$ns node]
+## node(18) at 143.746689,745.754211
+$node(18) set X_ 143.746689
+$node(18) set Y_ 745.754211
+$node(18) set Z_ 0.0
+$node(18) color "black"
+$ns initial_node_pos $node(18) 10.000000
+$ns at 0.000000 "$node(18) setdest 270.021759 732.984375 1.269191"
+set node(17) [$ns node]
+## node(17) at 488.254089,744.867493
+$node(17) set X_ 488.254089
+$node(17) set Y_ 744.867493
+$node(17) set Z_ 0.0
+$node(17) color "black"
+$ns initial_node_pos $node(17) 10.000000
+$ns at 0.000000 "$node(17) setdest 323.670685 773.953430 1.671337"
+set node(16) [$ns node]
+## node(16) at 468.001678,640.800537
+$node(16) set X_ 468.001678
+$node(16) set Y_ 640.800537
+$node(16) set Z_ 0.0
+$node(16) color "black"
+$ns initial_node_pos $node(16) 10.000000
+$ns at 0.000000 "$node(16) setdest 309.305389 675.610535 1.624692"
+set node(15) [$ns node]
+## node(15) at 308.549408,740.975830
+$node(15) set X_ 308.549408
+$node(15) set Y_ 740.975830
+$node(15) set Z_ 0.0
+$node(15) color "black"
+$ns initial_node_pos $node(15) 10.000000
+$ns at 0.000000 "$node(15) setdest 446.976379 651.411865 1.648749"
+set node(14) [$ns node]
+## node(14) at 216.904633,635.795593
+$node(14) set X_ 216.904633
+$node(14) set Y_ 635.795593
+$node(14) set Z_ 0.0
+$node(14) color "black"
+$ns initial_node_pos $node(14) 10.000000
+$ns at 0.000000 "$node(14) setdest 302.526733 624.086548 0.864190"
+set node(13) [$ns node]
+## node(13) at 302.920654,555.100220
+$node(13) set X_ 302.920654
+$node(13) set Y_ 555.100220
+$node(13) set Z_ 0.0
+$node(13) color "black"
+$ns initial_node_pos $node(13) 10.000000
+$ns at 0.000000 "$node(13) setdest 383.783936 680.339478 1.490763"
+set node(12) [$ns node]
+## node(12) at 576.043640,574.608948
+$node(12) set X_ 576.043640
+$node(12) set Y_ 574.608948
+$node(12) set Z_ 0.0
+$node(12) color "black"
+$ns initial_node_pos $node(12) 10.000000
+$ns at 0.000000 "$node(12) setdest 544.801208 619.631226 0.548005"
+set node(11) [$ns node]
+## node(11) at 602.756287,747.575195
+$node(11) set X_ 602.756287
+$node(11) set Y_ 747.575195
+$node(11) set Z_ 0.0
+$node(11) color "black"
+$ns initial_node_pos $node(11) 10.000000
+$ns at 0.000000 "$node(11) setdest 616.568665 763.400391 0.210052"
+set node(10) [$ns node]
+## node(10) at 370.341675,803.032471
+$node(10) set X_ 370.341675
+$node(10) set Y_ 803.032471
+$node(10) set Z_ 0.0
+$node(10) color "black"
+$ns initial_node_pos $node(10) 10.000000
+$ns at 0.000000 "$node(10) setdest 495.523468 727.668823 1.461169"
+set node(9) [$ns node]
+## node(9) at 219.324188,795.796936
+$node(9) set X_ 219.324188
+$node(9) set Y_ 795.796936
+$node(9) set Z_ 0.0
+$node(9) color "black"
+$ns initial_node_pos $node(9) 10.000000
+$ns at 0.000000 "$node(9) setdest 143.785706 750.859131 0.878946"
+set node(8) [$ns node]
+## node(8) at 159.577057,691.726562
+$node(8) set X_ 159.577057
+$node(8) set Y_ 691.726562
+$node(8) set Z_ 0.0
+$node(8) color "black"
+$ns initial_node_pos $node(8) 10.000000
+$ns at 0.000000 "$node(8) setdest 256.056824 791.752686 1.389733"
+set node(7) [$ns node]
+## node(7) at 87.820175,602.181335
+$node(7) set X_ 87.820175
+$node(7) set Y_ 602.181335
+$node(7) set Z_ 0.0
+$node(7) color "black"
+$ns initial_node_pos $node(7) 10.000000
+$ns at 0.000000 "$node(7) setdest 100.502426 607.824036 0.138809"
+set node(6) [$ns node]
+## node(6) at 253.648300,493.304474
+$node(6) set X_ 253.648300
+$node(6) set Y_ 493.304474
+$node(6) set Z_ 0.0
+$node(6) color "black"
+$ns initial_node_pos $node(6) 10.000000
+$ns at 0.000000 "$node(6) setdest 135.845642 480.619568 1.184836"
+set node(5) [$ns node]
+## node(5) at 366.558716,541.261230
+$node(5) set X_ 366.558716
+$node(5) set Y_ 541.261230
+$node(5) set Z_ 0.0
+$node(5) color "black"
+$ns initial_node_pos $node(5) 10.000000
+$ns at 0.000000 "$node(5) setdest 569.452393 514.858276 2.046044"
+set node(4) [$ns node]
+## node(4) at 490.007141,530.723999
+$node(4) set X_ 490.007141
+$node(4) set Y_ 530.723999
+$node(4) set Z_ 0.0
+$node(4) color "black"
+$ns initial_node_pos $node(4) 10.000000
+$ns at 0.000000 "$node(4) setdest 241.128296 695.869141 2.986865"
+set node(3) [$ns node]
+## node(3) at 536.764099,683.385010
+$node(3) set X_ 536.764099
+$node(3) set Y_ 683.385010
+$node(3) set Z_ 0.0
+$node(3) color "black"
+$ns initial_node_pos $node(3) 10.000000
+$ns at 0.000000 "$node(3) setdest 541.425354 692.777222 0.104853"
+set node(2) [$ns node]
+## node(2) at 447.296234,699.066345
+$node(2) set X_ 447.296234
+$node(2) set Y_ 699.066345
+$node(2) set Z_ 0.0
+$node(2) color "black"
+$ns initial_node_pos $node(2) 10.000000
+$ns at 0.000000 "$node(2) setdest 409.697418 731.699158 0.497853"
+set node(1) [$ns node]
+## node(1) at 346.681091,619.183289
+$node(1) set X_ 346.681091
+$node(1) set Y_ 619.183289
+$node(1) set Z_ 0.0
+$node(1) color "black"
+$ns initial_node_pos $node(1) 10.000000
+$ns at 0.000000 "$node(1) setdest 421.747589 533.370239 1.140125"
+
+# Create links between nodes.
+# Add Link Loss Models
+
+# Create agents.
+set agent(12) [new Agent/UDP]
+$ns attach-agent $node(11) $agent(12)
+
+# Create traffic sources and add them to the agent.
+set traffic_source(6) [new Application/Traffic/CBR]
+$traffic_source(6) attach-agent $agent(12)
+$traffic_source(6) set interval_ 0.020000
+set agent(7) [new Agent/UDP]
+$ns attach-agent $node(11) $agent(7)
+
+# Create traffic sources and add them to the agent.
+set traffic_source(3) [new Application/Traffic/CBR]
+$traffic_source(3) attach-agent $agent(7)
+$traffic_source(3) set interval_ 0.020000
+set agent(9) [new Agent/UDP]
+$ns attach-agent $node(10) $agent(9)
+
+# Create traffic sources and add them to the agent.
+set traffic_source(2) [new Application/Traffic/CBR]
+$traffic_source(2) attach-agent $agent(9)
+$traffic_source(2) set interval_ 0.020000
+set agent(6) [new Agent/UDP]
+$ns attach-agent $node(9) $agent(6)
+
+$ns color 6 "black"
+$agent(6) set fid_ 6
+$agent(6) set packetSize_ 210
+
+# Create traffic sources and add them to the agent.
+set traffic_source(1) [new Application/Traffic/CBR]
+$traffic_source(1) attach-agent $agent(6)
+$traffic_source(1) set interval_ 0.020000
+set agent(8) [new Agent/UDP]
+$ns attach-agent $node(7) $agent(8)
+
+$ns color 8 "black"
+$agent(8) set fid_ 8
+$agent(8) set packetSize_ 210
+
+# Create traffic sources and add them to the agent.
+set traffic_source(5) [new Application/Traffic/CBR]
+$traffic_source(5) attach-agent $agent(8)
+$traffic_source(5) set interval_ 0.020000
+set agent(10) [new Agent/UDP]
+$ns attach-agent $node(6) $agent(10)
+
+$ns color 10 "black"
+$agent(10) set fid_ 10
+$agent(10) set packetSize_ 210
+
+# Create traffic sources and add them to the agent.
+set traffic_source(4) [new Application/Traffic/CBR]
+$traffic_source(4) attach-agent $agent(10)
+$traffic_source(4) set interval_ 0.020000
+set agent(11) [new Agent/Null]
+$ns attach-agent $node(4) $agent(11)
+
+$ns color 11 "black"
+$agent(11) set fid_ 11
+$agent(11) set packetSize_ 210
+set agent(5) [new Agent/Null]
+$ns attach-agent $node(1) $agent(5)
+
+$ns color 5 "black"
+$agent(5) set fid_ 5
+$agent(5) set packetSize_ 210
+set agent(4) [new Agent/Null]
+$ns attach-agent $node(1) $agent(4)
+set agent(3) [new Agent/Null]
+$ns attach-agent $node(1) $agent(3)
+
+$ns color 3 "black"
+$agent(3) set fid_ 3
+$agent(3) set packetSize_ 210
+set agent(2) [new Agent/Null]
+$ns attach-agent $node(1) $agent(2)
+set agent(1) [new Agent/Null]
+$ns attach-agent $node(1) $agent(1)
+
+# Connect agents.
+$ns connect $agent(6) $agent(4)
+
+
+# Traffic Source actions.
+$ns at 0.000000 "$traffic_source(1) start"
+$ns at 100.000000 "$traffic_source(1) stop"
+
+$ns connect $agent(8) $agent(2)
+
+
+# Traffic Source actions.
+$ns at 0.000000 "$traffic_source(5) start"
+$ns at 100.000000 "$traffic_source(5) stop"
+
+$ns connect $agent(10) $agent(1)
+
+
+# Traffic Source actions.
+$ns at 0.000000 "$traffic_source(4) start"
+$ns at 100.000000 "$traffic_source(4) stop"
+
+$ns connect $agent(11) $agent(12)
+
+
+# Traffic Source actions.
+$ns connect $agent(5) $agent(7)
+
+
+# Traffic Source actions.
+$ns connect $agent(3) $agent(9)
+
+
+# Traffic Source actions.
+# Run the simulation
+proc finish {} {
+	global ns namfile
+	$ns flush-trace
+	close $namfile
+	exec nam -r 2000.000000us /home/ubuntu18/ns-allinone-2.35/20nodes.nam &	
+	exit 0
+	}
+$ns at 100.000000 "finish"
+$ns run
